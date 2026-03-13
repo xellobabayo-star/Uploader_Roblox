@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>XELLO Studio – Roblox Audio Uploader</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/base.css"/>
+<link rel="stylesheet" href="/css/index.css"/>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">XELLO<em>.</em>STUDIO</div>
+  <div class="nav-center">
+    <a href="#features">Fitur</a>
+    <a href="#pricing">Harga</a>
+    <a href="#howto">Cara Pakai</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-ghost" onclick="openModal('login')">LOGIN</button>
+    <button class="btn-fill" onclick="openModal('register')">DAFTAR →</button>
+  </div>
+  <div class="nav-mobile">
+    <button class="btn-ghost" onclick="openModal('login')" style="padding:8px 16px;font-size:11px">LOGIN</button>
+    <button class="btn-fill" onclick="openModal('register')" style="padding:8px 16px;font-size:11px">DAFTAR</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><span class="badge-pulse"></span> Platform Audio Roblox Terbaik</div>
+  <h1>Upload Audio Roblox<br><span class="line2">Lebih Cepat & Pintar</span></h1>
+  <p class="hero-desc">Bulk upload, konversi tempo & pitch otomatis, preview real-time — semua dalam satu dashboard yang powerful untuk kreator Roblox.</p>
+  <div class="hero-actions">
+    <a href="#" class="btn-hero-main" onclick="openModal('register');return false">🚀 Mulai Gratis Sekarang</a>
+    <a href="#features" class="btn-hero-out">✦ Lihat Semua Fitur</a>
+  </div>
+
+  <!-- PREVIEW CARD -->
+  <div class="hero-preview">
+    <div class="preview-card">
+      <div class="preview-topbar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <div class="preview-title">xello-studio / upload-dashboard</div>
+      </div>
+      <div class="preview-files">
+        <div class="pf-item">
+          <span class="pf-icon">🎵</span>
+          <span class="pf-name">bgm_boss_fight.mp3</span>
+          <span class="pf-status pf-ok">✓ SUCCESS</span>
+          <span class="pf-id">132847569</span>
+        </div>
+        <div class="pf-item">
+          <span class="pf-icon">🎵</span>
+          <span class="pf-name">theme_lobby_2x.mp3</span>
+          <span class="pf-status pf-ok">✓ SUCCESS</span>
+          <span class="pf-id">132847571</span>
+        </div>
+        <div class="pf-item">
+          <span class="pf-icon">🎵</span>
+          <span class="pf-name">ambience_forest.mp3</span>
+          <span class="pf-status pf-up">⏳ UPLOADING</span>
+        </div>
+      </div>
+      <div class="preview-bar-wrap"><div class="preview-bar"></div></div>
+      <div class="preview-status">⚡ Mengupload 3/5 file... tempo 2.0x aktif</div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-num">10K+</div><div class="stat-lbl">Audio Diupload</div></div>
+    <div class="stat-item"><div class="stat-num">99.9%</div><div class="stat-lbl">Uptime</div></div>
+    <div class="stat-item"><div class="stat-num">3x</div><div class="stat-lbl">Lebih Cepat</div></div>
+    <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-lbl">Online</div></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="tag">Fitur Unggulan</div>
+  <h2 class="sec-h">Semua yang kamu butuhkan<br>dalam satu platform</h2>
+  <p class="sec-p">Dirancang khusus untuk kreator Roblox yang ingin upload audio lebih cepat, lebih mudah, dan lebih efisien.</p>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon-wrap fi-cyan">⚡</div>
+      <div class="feat-t">BULK UPLOAD</div>
+      <div class="feat-d">Upload puluhan file sekaligus dalam satu klik. Sistem antrian otomatis dengan retry 3x untuk memastikan semua file berhasil.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon-wrap fi-purple">🎚️</div>
+      <div class="feat-t">AUDIO PROCESSOR</div>
+      <div class="feat-d">Ubah tempo (speed) dan pitch secara real-time menggunakan FFmpeg. Bypass copyright Roblox dengan 2x speed otomatis.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon-wrap fi-pink">🎧</div>
+      <div class="feat-t">AUDIO PREVIEW</div>
+      <div class="feat-d">Dengarkan hasil proses audio langsung di browser dengan waveform visualizer sebelum upload ke Roblox.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon-wrap fi-green">👥</div>
+      <div class="feat-t">GROUP & PERSONAL</div>
+      <div class="feat-d">Upload ke akun personal maupun Group Roblox. Kelola multiple akun dan API key dengan aman di satu tempat.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon-wrap fi-cyan">📊</div>
+      <div class="feat-t">HISTORY & LOG</div>
+      <div class="feat-d">Riwayat upload lengkap dengan Asset ID, status sukses/gagal, dan log error detail untuk setiap file.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon-wrap fi-purple">🔑</div>
+      <div class="feat-t">INVITE SYSTEM</div>
+      <div class="feat-d">Upgrade tier dengan kode invite eksklusif. Tier Beginner 50 upload/bulan atau Pro unlimited — sesuai kebutuhanmu.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HIGHLIGHT BAND -->
+<div class="highlight">
+  <div class="hl-wrap">
+    <div class="hl-left">
+      <div class="hl-tag">// Audio Processing</div>
+      <div class="hl-h">Bypass Copyright<br>Roblox Otomatis</div>
+      <p class="hl-p">Gunakan fitur tempo 2x untuk bypass filter copyright Roblox secara otomatis. Pitch shift tanpa kehilangan kualitas audio.</p>
+      <div class="hl-list">
+        <div class="hl-item">Speed 0.5x – 4.0x dengan chain filter FFmpeg</div>
+        <div class="hl-item">Pitch shift -12 hingga +12 semitone</div>
+        <div class="hl-item">Output 192kbps MP3, sample rate 44100Hz</div>
+        <div class="hl-item">Preview hasil sebelum upload</div>
+      </div>
+      <button class="btn-fill" onclick="openModal('register')" style="font-size:12px;padding:12px 28px">COBA SEKARANG →</button>
+    </div>
+    <div class="hl-right">
+      <div class="hl-card"><div class="hl-card-icon">⚡</div><div><div class="hl-card-t">Speed 2x aktif</div><div class="hl-card-d">atempo=2.0 · FFmpeg</div></div></div>
+      <div class="hl-card"><div class="hl-card-icon">🎵</div><div><div class="hl-card-t">Pitch +3 semitone</div><div class="hl-card-d">asetrate=52326 · 44100Hz</div></div></div>
+      <div class="hl-card"><div class="hl-card-icon">✅</div><div><div class="hl-card-t">Upload sukses</div><div class="hl-card-d">Asset ID: 132847569</div></div></div>
+      <div class="hl-card"><div class="hl-card-icon">🔒</div><div><div class="hl-card-t">API Key aman</div><div class="hl-card-d">Enkripsi di server</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<section class="section" id="pricing" style="padding-top:0">
+  <div class="tag">Paket & Harga</div>
+  <h2 class="sec-h">Mulai gratis, upgrade kapan saja</h2>
+  <p class="sec-p">Tidak perlu kartu kredit. Upgrade tier menggunakan kode invite dari admin.</p>
+  <div class="pricing-grid">
+
+    <div class="price-card">
+      <div class="price-tag-label">// TIER 01</div>
+      <div class="price-name">TRIAL</div>
+      <div class="price-desc">Gratis · tidak perlu kode</div>
+      <div class="price-amount"><span class="price-num c1">3</span><span class="price-unit">upload / bulan</span></div>
+      <ul class="price-features">
+        <li><span class="chk">✓</span> Bulk upload (maks 3/bulan)</li>
+        <li><span class="chk">✓</span> Audio preview</li>
+        <li><span class="chk">✓</span> Personal & Group upload</li>
+        <li class="dim"><span class="nop">✗</span> Audio processing</li>
+        <li class="dim"><span class="nop">✗</span> Priority support</li>
+      </ul>
+      <a href="#" class="price-btn price-btn-out" onclick="openModal('register');return false">DAFTAR GRATIS</a>
+    </div>
+
+    <div class="price-card hot">
+      <div class="price-tag-label">// TIER 02</div>
+      <div class="price-name">BEGINNER</div>
+      <div class="price-desc">Pakai kode invite</div>
+      <div class="price-amount"><span class="price-num c2">50</span><span class="price-unit">upload / bulan</span></div>
+      <ul class="price-features">
+        <li><span class="chk">✓</span> Bulk upload (maks 50/bulan)</li>
+        <li><span class="chk">✓</span> Audio preview + waveform</li>
+        <li><span class="chk">✓</span> Personal & Group upload</li>
+        <li><span class="chk">✓</span> Audio processing (tempo/pitch)</li>
+        <li class="dim"><span class="nop">✗</span> Priority support</li>
+      </ul>
+      <a href="#" class="price-btn price-btn-fill" onclick="openModal('register');return false">DAPATKAN AKSES</a>
+    </div>
+
+    <div class="price-card">
+      <div class="price-tag-label">// TIER 03</div>
+      <div class="price-name">PRO</div>
+      <div class="price-desc">Pakai kode invite</div>
+      <div class="price-amount"><span class="price-num c3">∞</span><span class="price-unit">unlimited</span></div>
+      <ul class="price-features">
+        <li><span class="chk">✓</span> Upload UNLIMITED</li>
+        <li><span class="chk">✓</span> Audio preview + waveform</li>
+        <li><span class="chk">✓</span> Personal & Group upload</li>
+        <li><span class="chk">✓</span> Audio processing (tempo/pitch)</li>
+        <li><span class="chk">✓</span> Priority support</li>
+      </ul>
+      <a href="#" class="price-btn price-btn-out" onclick="openModal('register');return false">DAPATKAN AKSES</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="howto" style="padding-top:0">
+  <div class="tag">Cara Pakai</div>
+  <h2 class="sec-h">Mulai dalam 3 langkah mudah</h2>
+  <div class="steps-grid">
+    <div class="step">
+      <div class="step-circle">
+        📝
+        <div class="step-num-badge">1</div>
+      </div>
+      <div>
+        <div class="step-t">DAFTAR AKUN</div>
+        <div class="step-d">Buat akun gratis dalam hitungan detik. Jika punya kode invite, masukkan saat registrasi untuk langsung upgrade tier.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-circle">
+        🔗
+        <div class="step-num-badge">2</div>
+      </div>
+      <div>
+        <div class="step-t">HUBUNGKAN ROBLOX</div>
+        <div class="step-d">Masukkan Roblox API Key dan User ID (atau Group ID) di halaman Settings. Data tersimpan aman di server.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-circle">
+        🚀
+        <div class="step-num-badge">3</div>
+      </div>
+      <div>
+        <div class="step-t">UPLOAD & SELESAI</div>
+        <div class="step-d">Drag & drop file MP3, atur tempo/pitch sesuai kebutuhan, preview, dan upload langsung ke Roblox dalam sekejap!</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <div class="logo">XELLO<em>.</em>STUDIO</div>
+        <p>Platform upload audio Roblox terbaik. Bulk upload, audio processing, dan manajemen aset — semua dalam satu tempat.</p>
+      </div>
+      <div class="foot-links">
+        <h4>NAVIGASI</h4>
+        <a href="#features">Fitur</a>
+        <a href="#pricing">Harga</a>
+        <a href="#howto">Cara Pakai</a>
+        <a href="/dashboard">Dashboard</a>
+      </div>
+      <div class="foot-links">
+        <h4>AKUN</h4>
+        <a href="#" onclick="openModal('login');return false">Login</a>
+        <a href="#" onclick="openModal('register');return false">Daftar Gratis</a>
+        <a href="/admin">Admin Panel</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div class="foot-copy">© 2026 XELLO Studio · Roblox Audio Upload Platform</div>
+      <div class="foot-made">Built with ⚡ for Roblox Creators</div>
+    </div>
+  </div>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-logo">⚡ XELLO</div>
+    <div class="modal-title" id="modalTitle">LOGIN</div>
+    <div class="modal-sub" id="modalSub">Masuk ke akun XELLO Studio kamu</div>
+    <div class="tab-row">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">LOGIN</button>
+      <button class="tab" id="tabReg" onclick="switchTab('register')">DAFTAR</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="fg"><label>Username</label><input type="text" id="loginUser" placeholder="username kamu" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="form-submit" onclick="doLogin()">MASUK →</button>
+      <div class="form-msg" id="loginMsg"></div>
+    </div>
+
+    <div id="registerForm" style="display:none">
+      <div class="fg"><label>Username</label><input type="text" id="regUser" placeholder="min 3 karakter"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="regPass" placeholder="min 6 karakter"/></div>
+      <div class="fg"><label>Email (opsional)</label><input type="email" id="regEmail" placeholder="email@kamu.com"/></div>
+      <div class="fg"><label>Kode Invite <span style="color:#ff2d6b">*</span></label><input type="text" id="regCode" placeholder="XELLO-XXXXXX — wajib diisi" style="text-transform:uppercase;letter-spacing:2px;border-color:rgba(0,229,255,0.25)" onkeydown="if(event.key==='Enter')doRegister()"/></div>
+      <button class="form-submit" onclick="doRegister()">DAFTAR SEKARANG →</button>
+      <div class="form-msg" id="registerMsg"></div>
+      <div class="invite-note">Belum punya kode? <span>Hubungi admin untuk mendapatkan akses.</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(tab){document.getElementById('modalBg').classList.add('show');switchTab(tab);}
+function closeModal(){document.getElementById('modalBg').classList.remove('show');}
+function switchTab(tab){
+  document.getElementById('tabLogin').classList.toggle('active',tab==='login');
+  document.getElementById('tabReg').classList.toggle('active',tab==='register');
+  document.getElementById('loginForm').style.display=tab==='login'?'block':'none';
+  document.getElementById('registerForm').style.display=tab==='register'?'block':'none';
+  document.getElementById('modalTitle').textContent=tab==='login'?'LOGIN':'DAFTAR';
+  document.getElementById('modalSub').textContent=tab==='login'?'Masuk ke akun XELLO Studio kamu':'Buat akun baru — gratis!';
+}
+function showMsg(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='form-msg '+type;}
+
+async function doLogin(){
+  const username=document.getElementById('loginUser').value.trim();
+  const password=document.getElementById('loginPass').value;
+  if(!username||!password){showMsg('loginMsg','Isi semua field!','error');return;}
+  showMsg('loginMsg','Memproses...','');
+  try{
+    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    const d=await r.json();
+    if(d.success){showMsg('loginMsg','Berhasil! Mengalihkan...','success');setTimeout(()=>location.href='/dashboard',700);}
+    else showMsg('loginMsg',d.error||'Login gagal','error');
+  }catch{showMsg('loginMsg','Koneksi error','error');}
+}
+
+async function doRegister(){
+  const username=document.getElementById('regUser').value.trim();
+  const password=document.getElementById('regPass').value;
+  const email=document.getElementById('regEmail').value.trim();
+  const invite_code=document.getElementById('regCode').value.trim();
+  if(!username||!password){showMsg('registerMsg','Username dan password wajib!','error');return;}
+  if(!invite_code){showMsg('registerMsg','Kode invite wajib diisi!','error');return;}
+  showMsg('registerMsg','Memproses...','');
+  try{
+    const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password,email,invite_code})});
+    const d=await r.json();
+    if(d.success){showMsg('registerMsg',d.message,'success');setTimeout(()=>switchTab('login'),1500);}
+    else showMsg('registerMsg',d.error||'Registrasi gagal','error');
+  }catch{showMsg('registerMsg','Koneksi error','error');}
+}
+
+// Check already logged in
+fetch('/api/me').then(r=>r.json()).then(d=>{if(d.authenticated&&d.id)location.href='/dashboard';}).catch(()=>{});
+if(location.search.includes('modal=login'))openModal('login');
+</script>
+</body>
+</html>

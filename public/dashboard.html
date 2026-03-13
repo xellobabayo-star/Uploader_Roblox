@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dashboard – XELLO Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/base.css"/>
+<link rel="stylesheet" href="/css/dashboard.css"/>
+</head>
+<body>
+<button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">☰</button>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="layout">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div>
+      <div class="sb-logo-text">XELLO</div>
+      <div class="sb-logo-sub">STUDIO</div>
+    </div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar" id="sbAvatar">?</div>
+    <div>
+      <div class="sb-uname" id="sbName">Loading...</div>
+      <span class="sb-tier tier-trial" id="sbTier">TRIAL</span>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <a class="active" onclick="goPage('upload')" id="nav-upload"><span class="icon">🚀</span>Upload Audio</a>
+    <a onclick="goPage('editor')" id="nav-editor"><span class="icon">✂️</span>Audio Editor</a>
+    <a onclick="goPage('history')" id="nav-history"><span class="icon">📋</span>Riwayat Upload</a>
+    <a onclick="goPage('settings')" id="nav-settings"><span class="icon">⚙️</span>Settings</a>
+  </nav>
+  <div class="sb-quota">
+    <div class="sq-label">Quota Bulan Ini</div>
+    <div class="sq-bar-bg"><div class="sq-bar" id="quotaBar" style="width:0%"></div></div>
+    <div class="sq-text"><span id="quotaUsed">0/0</span><span id="quotaLeft">Sisa: 0</span></div>
+  </div>
+  <div class="sb-logout">
+    <button onclick="doLogout()">LOGOUT</button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- UPLOAD PAGE -->
+  <div class="page-section active" id="page-upload">
+    <div class="topbar">
+      <div><div class="page-title">Upload Audio</div><div class="page-sub">Bulk upload MP3 ke Roblox</div></div>
+    </div>
+    <div id="noApiWarn" class="no-api-warn" onclick="goPage('settings')">
+      ⚠️ <span>Kamu belum menghubungkan akun Roblox. <strong>Klik di sini untuk ke Settings →</strong></span>
+    </div>
+    <div class="upload-grid">
+      <!-- LEFT: DROP + FILES -->
+      <div>
+        <div class="card">
+          <div class="card-title"><span>◈</span> PILIH FILE</div>
+          <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <span class="dz-icon">🎵</span>
+            <div class="dz-text">Drag & drop file MP3 di sini<br><strong>atau klik untuk browse</strong></div>
+            <div class="dz-sub">Maks 20MB per file · Format MP3</div>
+          </div>
+          <input type="file" id="fileInput" multiple accept=".mp3,audio/mpeg"/>
+          <div class="file-list" id="fileList"></div>
+
+          <!-- PREVIEW BOX -->
+          <div class="preview-box" id="previewBox" style="margin-top:14px;display:none">
+            <div class="prev-title">▶ PREVIEW</div>
+            <div class="prev-name" id="prevName">—</div>
+            <canvas id="waveCanvas" height="40"></canvas>
+            <div class="prev-controls">
+              <button class="prev-btn" id="prevPlayBtn" onclick="togglePlay()">▶</button>
+              <div class="prev-progress-wrap" id="prevProgressWrap" onclick="seekAudio(event)">
+                <div class="prev-progress" id="prevProgress"></div>
+              </div>
+              <span class="prev-time" id="prevTime">0:00 / 0:00</span>
+            </div>
+          </div>
+
+          <button class="upload-btn" id="uploadBtn" onclick="startUpload()" disabled>⚡ UPLOAD KE ROBLOX</button>
+          <div class="upload-progress" id="uploadProgress">
+            <div class="up-bar-bg"><div class="up-bar" id="upBar"></div></div>
+            <div class="up-status" id="upStatus">Memproses...</div>
+          </div>
+          <div class="results-box" id="resultsBox"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: PROCESSOR -->
+      <div>
+        <div class="card">
+          <div class="card-title"><span>◈</span> AUDIO PROCESSOR</div>
+          <div class="toggle-row">
+            <span class="tgl-label">🎚️ Ubah Tempo</span>
+            <label class="sw"><input type="checkbox" id="tempoToggle" onchange="updateTempoUI()"/><div class="sw-track"></div><div class="sw-knob"></div></label>
+          </div>
+          <div class="proc-row">
+            <div class="proc-block">
+              <div class="pb-label"><span>TEMPO</span><span id="tempoLabel">2.0x</span></div>
+              <div class="pb-val" id="tempoVal">2.0×</div>
+              <input type="range" id="tempoRange" min="10" max="40" value="20" step="1" oninput="updateTempo(this)"/>
+              <div class="ticks"><span>1.0×</span><span>2.0×</span><span>3.0×</span><span>4.0×</span></div>
+            </div>
+            <div class="proc-block">
+              <div class="pb-label"><span>PITCH</span><span id="pitchLabel">0st</span></div>
+              <div class="pb-val pitch" id="pitchVal">±0st</div>
+              <input type="range" class="pitch-range" id="pitchRange" min="-12" max="12" value="0" step="1" oninput="updatePitch(this)"/>
+              <div class="ticks"><span>-12</span><span>0</span><span>+12</span></div>
+            </div>
+          </div>
+          <div class="info-box">
+            <strong>Info Processor:</strong><br>
+            Tempo <strong id="tempoInfo">2.0x</strong> → playback speed di Roblox jadi <strong id="playInfo">0.5x</strong> dari normal.<br>
+            Pitch mengubah nada audio tanpa mempengaruhi durasi.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITOR PAGE -->
+  <div class="page-section" id="page-editor">
+    <div class="topbar" style="margin-bottom:16px">
+      <div><div class="page-title">Audio Editor</div><div class="page-sub">Trim · Fade · Download dari YouTube/SoundCloud</div></div>
+    </div>
+
+    <!-- URL DOWNLOADER -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title"><span>⬇️</span> DOWNLOAD DARI URL</div>
+      <div class="warn-box" style="margin-bottom:12px">
+        ⚡ Masukkan link <strong>YouTube</strong> atau <strong>SoundCloud</strong> untuk otomatis download audio MP3
+      </div>
+      <div class="ed-url-box">
+        <input type="url" id="edUrlInput" placeholder="https://youtube.com/watch?v=... atau https://soundcloud.com/..."/>
+        <button class="ed-fetch-btn" id="edFetchBtn" onclick="edFetchUrl()">⬇️ Ambil Audio</button>
+      </div>
+      <div class="ed-progress" id="edFetchProgress">
+        <div class="ed-prog-bar-bg"><div class="ed-prog-bar" id="edFetchBar" style="width:60%"></div></div>
+        <div style="font-size:11px;color:rgba(200,223,240,0.4);margin-top:6px;text-align:center" id="edFetchStatus">Mengunduh...</div>
+      </div>
+    </div>
+
+    <!-- WAVEFORM EDITOR -->
+    <div class="card">
+      <div class="card-title"><span>◈</span> WAVEFORM EDITOR</div>
+
+      <!-- Drop zone for local file -->
+      <div class="ed-drop" id="edDropZone" onclick="document.getElementById('edFileInput').click()">
+        <span style="font-size:28px;display:block;margin-bottom:8px">🎵</span>
+        <div style="font-size:13px;color:rgba(200,223,240,0.5)">Drag & drop MP3 atau <strong style="color:var(--c)">klik untuk pilih file</strong></div>
+        <div style="font-size:11px;color:rgba(200,223,240,0.25);margin-top:4px">Atau gunakan downloader di atas</div>
+      </div>
+      <input type="file" id="edFileInput" accept=".mp3,audio/mpeg" style="display:none"/>
+
+      <!-- Placeholder -->
+      <div id="edPlaceholder" class="ed-info-placeholder">
+        <span class="ei">✂️</span>
+        <p>Upload atau download musik dulu untuk mulai mengedit.<br>Setelah itu kamu bisa trim, fade in/out, dan preview!</p>
+      </div>
+
+      <!-- Editor controls (hidden until file loaded) -->
+      <div id="edControls" style="display:none">
+        <div class="ed-controls">
+          <button class="ed-play-btn" id="edPlayBtn" onclick="edTogglePlay()">▶</button>
+          <div class="ed-filename" id="edFileName">—</div>
+          <div class="ed-duration" id="edDuration">0:00</div>
+        </div>
+
+        <!-- Waveform Canvas -->
+        <div class="ed-waveform-wrap" id="edWaveWrap">
+          <canvas id="edCanvas" height="80"></canvas>
+        </div>
+        <div class="ed-time-row">
+          <span id="edStartLbl">0:00</span>
+          <span id="edMidLbl">—</span>
+          <span id="edEndLbl">0:00</span>
+        </div>
+
+        <!-- Trim indicators -->
+        <div class="ed-trim-row">
+          <div class="ed-trim-input">
+            <div class="ed-trim-label">✂️ Mulai Trim</div>
+            <div class="ed-trim-val" id="edTrimStartVal">0:00.0</div>
+          </div>
+          <div class="ed-trim-input">
+            <div class="ed-trim-label">✂️ Akhir Trim</div>
+            <div class="ed-trim-val" id="edTrimEndVal">0:00.0</div>
+          </div>
+        </div>
+
+        <!-- Fade controls -->
+        <div class="ed-fade-row">
+          <div class="ed-fade-block">
+            <div class="ed-fade-label"><span class="ed-fi-label">◀ FADE IN</span><span id="edFiVal" style="color:rgba(200,223,240,0.4)">0.0s</span></div>
+            <div class="ed-fade-val ed-fi-val" id="edFiDisp">0.0s</div>
+            <input type="range" class="fi-range" id="edFiRange" min="0" max="100" value="0" step="1" oninput="edUpdateFade(this,'in')"/>
+          </div>
+          <div class="ed-fade-block">
+            <div class="ed-fade-label"><span class="ed-fo-label">FADE OUT ▶</span><span id="edFoVal" style="color:rgba(200,223,240,0.4)">0.0s</span></div>
+            <div class="ed-fade-val ed-fo-val" id="edFoDisp">0.0s</div>
+            <input type="range" class="fo-range" id="edFoRange" min="0" max="100" value="0" step="1" oninput="edUpdateFade(this,'out')"/>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="ed-action-row">
+          <button class="ed-apply-btn" id="edApplyBtn" onclick="edApplyAndSend()">✅ Proses & Kirim ke Upload</button>
+          <button class="ed-reset-btn" onclick="edReset()">↺ RESET</button>
+        </div>
+        <div class="ed-progress" id="edApplyProgress" style="margin-top:12px">
+          <div class="ed-prog-bar-bg"><div class="ed-prog-bar" id="edApplyBar" style="width:50%"></div></div>
+          <div style="font-size:11px;color:rgba(200,223,240,0.4);margin-top:6px;text-align:center" id="edApplyStatus">Memproses dengan FFmpeg...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY PAGE -->
+
+  <div class="page-section" id="page-history">
+    <div class="topbar" style="margin-bottom:16px">
+      <div><div class="page-title">Riwayat Upload</div><div class="page-sub">100 upload terakhir</div></div>
+      <button onclick="loadHistory()" style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);color:var(--c);padding:8px 14px;border-radius:7px;font-size:11px;cursor:pointer;font-family:Orbitron">↻ REFRESH</button>
+    </div>
+    <div class="card">
+      <div id="histContent"><div class="empty-state"><span class="ei">📭</span>Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page-section" id="page-settings">
+    <div class="topbar" style="margin-bottom:16px">
+      <div><div class="page-title">Settings</div><div class="page-sub">Kelola akun & Roblox</div></div>
+    </div>
+    <div class="settings-tabs">
+      <button class="stab active" onclick="switchStab('roblox')">🔗 Roblox</button>
+      <button class="stab" onclick="switchStab('invite')">🎫 Invite Code</button>
+      <button class="stab" onclick="switchStab('account')">👤 Akun</button>
+    </div>
+
+    <!-- ROBLOX SETTINGS -->
+    <div class="stab-content active" id="stab-roblox">
+      <div class="card">
+        <div class="card-title"><span>◈</span> HUBUNGKAN ROBLOX</div>
+        <div class="info-box">
+          Buat API Key di <strong>Roblox Creator Hub → Credentials</strong><br>
+          Pastikan aktifkan permission: <strong>Assets:Read</strong> dan <strong>Assets:Write</strong>
+        </div>
+        <div class="settings-tabs" style="margin-bottom:20px">
+          <button class="stab active" id="rtabPersonal" onclick="switchRobloxTab('user')">👤 Personal Account</button>
+          <button class="stab" id="rtabGroup" onclick="switchRobloxTab('group')">👥 Group Account</button>
+        </div>
+        <!-- Personal -->
+        <div id="robloxPersonal">
+          <div class="form-group">
+            <label>Roblox User ID</label>
+            <input type="text" id="rxUserId" placeholder="Contoh: 9217554647"/>
+            <div class="form-hint">Temukan di URL profil: roblox.com/users/[ID]/profile</div>
+          </div>
+          <div class="form-group">
+            <label>API Key (Personal)</label>
+            <input type="password" id="rxApiKey" placeholder="Paste API Key kamu"/>
+            <div class="form-hint">Kosongkan jika tidak ingin mengubah key tersimpan</div>
+          </div>
+        </div>
+        <!-- Group -->
+        <div id="robloxGroup" style="display:none">
+          <div class="info-box">
+            <strong>Tutorial Group Account:</strong><br>
+            1. Buka Group Settings di Roblox<br>
+            2. Creator Dashboard → Credentials<br>
+            3. Buat API Key dengan Assets:Read dan Assets:Write<br>
+            4. Copy User ID dan Group ID
+          </div>
+          <div class="form-group">
+            <label>Group ID</label>
+            <input type="text" id="rxGroupId" placeholder="Contoh: 12345678"/>
+            <div class="form-hint">Temukan di URL group: roblox.com/groups/[ID]</div>
+          </div>
+          <div class="form-group">
+            <label>Roblox User ID (Creator)</label>
+            <input type="text" id="rxGroupUserId" placeholder="Contoh: 9217554647"/>
+          </div>
+          <div class="form-group">
+            <label>Group API Key</label>
+            <input type="password" id="rxGroupApiKey" placeholder="Paste Group API Key"/>
+            <div class="form-hint">Kosongkan jika tidak ingin mengubah key tersimpan</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="save-btn" onclick="saveRoblox()">💾 SIMPAN</button>
+          <button class="save-btn" onclick="testRoblox()" style="background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.3);color:#00e5a0">🔍 CEK KONEKSI</button>
+        </div>
+        <div class="msg-inline" id="robloxMsg"></div>
+        <div id="robloxStatus" style="margin-top:12px;display:none;background:var(--bg3);border-radius:10px;padding:14px;font-size:12px;font-family:Space Mono;line-height:2"></div>
+      </div>
+    </div>
+
+    <!-- INVITE CODE -->
+    <div class="stab-content" id="stab-invite">
+      <div class="card">
+        <div class="card-title"><span>◈</span> REDEEM INVITE CODE</div>
+        <div class="warn-box">
+          ⚠️ Kode invite digunakan untuk upgrade tier. Pastikan kamu mendapatkan kode dari admin atau teman yang memiliki akses.
+        </div>
+        <div class="form-group">
+          <label>Tier Kamu Saat Ini</label>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid rgba(255,255,255,0.05)">
+            <span id="currentTierBadge" class="sb-tier tier-trial">TRIAL</span>
+            <span style="font-size:12px;color:rgba(200,223,240,0.5)" id="currentTierDesc">3 upload/bulan</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Masukkan Kode Invite</label>
+        </div>
+        <div class="invite-box">
+          <input type="text" id="inviteInput" placeholder="XELLO-XXXXXX"/>
+          <button onclick="redeemInvite()">REDEEM →</button>
+        </div>
+        <div class="msg-inline" id="inviteMsg"></div>
+      </div>
+    </div>
+
+    <!-- ACCOUNT -->
+    <div class="stab-content" id="stab-account">
+      <div class="card">
+        <div class="card-title"><span>◈</span> INFO AKUN</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,0.04)">
+            <div style="font-size:9px;letter-spacing:2px;color:rgba(200,223,240,0.3);margin-bottom:6px">USERNAME</div>
+            <div style="font-size:14px;color:#fff;font-weight:600" id="accUsername">—</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,0.04)">
+            <div style="font-size:9px;letter-spacing:2px;color:rgba(200,223,240,0.3);margin-bottom:6px">TIER</div>
+            <div id="accTier">—</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,0.04)">
+            <div style="font-size:9px;letter-spacing:2px;color:rgba(200,223,240,0.3);margin-bottom:6px">TOTAL UPLOAD</div>
+            <div style="font-size:20px;font-family:Orbitron;font-weight:900;color:var(--c)" id="accTotal">0</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,0.04)">
+            <div style="font-size:9px;letter-spacing:2px;color:rgba(200,223,240,0.3);margin-bottom:6px">BULAN INI</div>
+            <div style="font-size:20px;font-family:Orbitron;font-weight:900;color:var(--c2)" id="accMonthly">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+
+
+<audio id="audioPlayer" style="display:none"></audio>
+
+<script>
+// =============================================
+// STATE
+// =============================================
+let user = null;
+let files = []; // each entry: { file: File, title: '' }
+let currentPreviewFile = null;
+let audioCtx = null;
+let analyser = null;
+let animFrame = null;
+let robloxTab = 'user';
+let currentAudio = null;
+let isPlaying = false;
+
+function toggleSidebar(){
+  const open = document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show', open);
+  document.body.classList.toggle('sb-open', open);
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  document.body.classList.remove('sb-open');
+}
+function checkHamburger(){document.getElementById('hamburgerBtn').style.display=window.innerWidth<=768?'block':'none';}
+window.addEventListener('resize',checkHamburger);
+checkHamburger();
+
+// =============================================
+// INIT
+// =============================================
+window.onload = async () => {
+  await loadUser();
+  setupDrop();
+  initAudio();
+};
+
+async function loadUser(){
+  try{
+    const r = await fetch('/api/me');
+    const data = await r.json();
+    if(!data.authenticated){location.href='/?modal=login';return;}
+    user = data;
+    updateSidebar();
+  }catch(e){
+    location.href='/?modal=login';
+  }
+}
+
+function updateSidebar(){
+  document.getElementById('sbName').textContent = user.username;
+  document.getElementById('sbAvatar').textContent = user.username[0].toUpperCase();
+  const tierEl = document.getElementById('sbTier');
+  tierEl.textContent = user.tier.toUpperCase();
+  tierEl.className = `sb-tier tier-${user.tier}`;
+
+  // Quota
+  const pct = user.tier==='pro' ? 10 : Math.min(100,(user.uploads_this_month/user.tier_limit)*100);
+  document.getElementById('quotaBar').style.width = pct+'%';
+  document.getElementById('quotaUsed').textContent = `${user.uploads_this_month}/${user.tier==='pro'?'∞':user.tier_limit}`;
+  document.getElementById('quotaLeft').textContent = `Sisa: ${user.remaining}`;
+
+  // No API warn
+  document.getElementById('noApiWarn').style.display = user.has_api_key ? 'none' : 'flex';
+
+  // Settings page
+  document.getElementById('accUsername').textContent = user.username;
+  document.getElementById('accTotal').textContent = user.total_uploads;
+  document.getElementById('accMonthly').textContent = user.uploads_this_month;
+  const ab = document.getElementById('accTier');
+  ab.innerHTML = `<span class="sb-tier tier-${user.tier}">${user.tier.toUpperCase()}</span>`;
+
+  // Invite page
+  const ctb = document.getElementById('currentTierBadge');
+  ctb.textContent = user.tier.toUpperCase();
+  ctb.className = `sb-tier tier-${user.tier}`;
+  document.getElementById('currentTierDesc').textContent =
+    user.tier==='pro'?'Unlimited upload/bulan':
+    user.tier==='beginner'?'50 upload/bulan':'3 upload/bulan';
+
+  // Pre-fill roblox settings
+  if(user.roblox_user_id) document.getElementById('rxUserId').value = user.roblox_user_id;
+  if(user.roblox_group_id) document.getElementById('rxGroupId').value = user.roblox_group_id;
+  if(user.roblox_user_id) document.getElementById('rxGroupUserId').value = user.roblox_user_id;
+  if(user.creator_type==='group') switchRobloxTab('group');
+}
+
+// =============================================
+// NAVIGATION
+// =============================================
+function goPage(page){
+  document.querySelectorAll('.page-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sb-nav a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  closeSidebar();
+  if(page==='history') loadHistory();
+}
+
+function switchStab(tab){
+  document.querySelectorAll('.stab-content').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.settings-tabs .stab').forEach(s=>s.classList.remove('active'));
+  document.getElementById('stab-'+tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function switchRobloxTab(type){
+  robloxTab = type;
+  document.getElementById('robloxPersonal').style.display = type==='user'?'block':'none';
+  document.getElementById('robloxGroup').style.display = type==='group'?'block':'none';
+  document.getElementById('rtabPersonal').classList.toggle('active', type==='user');
+  document.getElementById('rtabGroup').classList.toggle('active', type==='group');
+}
+
+// =============================================
+// FILE HANDLING
+// =============================================
+function setupDrop(){
+  const dz = document.getElementById('dropZone');
+  const fi = document.getElementById('fileInput');
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');addFiles(Array.from(e.dataTransfer.files))});
+  fi.addEventListener('change',()=>{addFiles(Array.from(fi.files));fi.value='';});
+}
+
+function addFiles(newFiles){
+  const mp3s = newFiles.filter(f=>f.type==='audio/mpeg'||f.name.endsWith('.mp3'));
+  if(!mp3s.length){toast('Hanya file MP3 yang didukung','error');return;}
+  mp3s.forEach(f=>{ if(!files.find(x=>x.file.name===f.name&&x.file.size===f.size)) files.push({file:f,title:''}); });
+  renderFiles();
+  if(files.length && !currentPreviewFile) setPreview(files[0].file);
+}
+
+function renderFiles(){
+  const list = document.getElementById('fileList');
+  if(!files.length){list.innerHTML='';document.getElementById('uploadBtn').disabled=true;document.getElementById('previewBox').style.display='none';return;}
+  document.getElementById('uploadBtn').disabled=false;
+  list.innerHTML = files.map((entry,i)=>`
+    <div class="file-item" id="fi-${i}">
+      <span class="fi-icon">🎵</span>
+      <span class="fi-name" style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${entry.file.name}</span>
+      <span class="fi-size">${(entry.file.size/1024).toFixed(0)}KB</span>
+      <button class="fi-play" onclick="setPreview(files[${i}].file)" title="Preview">▶</button>
+      <span class="fi-status pending" id="fis-${i}">—</span>
+      <button class="fi-remove" onclick="removeFile(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeFile(i){
+  if(currentPreviewFile===files[i].file){stopPreview();currentPreviewFile=null;document.getElementById('previewBox').style.display='none';}
+  files.splice(i,1);
+  renderFiles();
+  if(files.length && !currentPreviewFile) setPreview(files[0].file);
+}
+
+// =============================================
+// AUDIO PREVIEW
+// =============================================
+const audioEl = document.getElementById('audioPlayer');
+
+function initAudio(){
+  audioEl.addEventListener('timeupdate', updateProgress);
+  audioEl.addEventListener('ended', ()=>{isPlaying=false;document.getElementById('prevPlayBtn').textContent='▶';});
+}
+
+function setPreview(file){
+  stopPreview();
+  currentPreviewFile = file;
+  const url = URL.createObjectURL(file);
+  audioEl.src = url;
+  document.getElementById('previewBox').style.display='block';
+  document.getElementById('prevName').textContent = file.name;
+  document.getElementById('prevPlayBtn').textContent='▶';
+  isPlaying = false;
+  audioEl.load();
+  audioEl.addEventListener('loadedmetadata', ()=>{
+    document.getElementById('prevTime').textContent = `0:00 / ${fmtTime(audioEl.duration)}`;
+    drawWave(file);
+  }, {once:true});
+}
+
+function togglePlay(){
+  if(!currentPreviewFile) return;
+  if(isPlaying){audioEl.pause();isPlaying=false;document.getElementById('prevPlayBtn').textContent='▶';}
+  else{audioEl.play();isPlaying=true;document.getElementById('prevPlayBtn').textContent='⏸';}
+}
+
+function stopPreview(){
+  audioEl.pause();
+  audioEl.src='';
+  isPlaying=false;
+}
+
+function updateProgress(){
+  const pct = (audioEl.currentTime/audioEl.duration)*100||0;
+  document.getElementById('prevProgress').style.width=pct+'%';
+  document.getElementById('prevTime').textContent = `${fmtTime(audioEl.currentTime)} / ${fmtTime(audioEl.duration)}`;
+}
+
+function seekAudio(e){
+  const rect = document.getElementById('prevProgressWrap').getBoundingClientRect();
+  const pct = (e.clientX-rect.left)/rect.width;
+  audioEl.currentTime = pct * audioEl.duration;
+}
+
+function fmtTime(s){
+  if(!s||isNaN(s))return'0:00';
+  const m=Math.floor(s/60),sec=Math.floor(s%60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function drawWave(file){
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth * window.devicePixelRatio || 600;
+  const H = 40;
+  canvas.width = W; canvas.height = H;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try{
+      const tmpCtx = new (window.AudioContext||window.webkitAudioContext)();
+      const buf = await tmpCtx.decodeAudioData(e.target.result);
+      const data = buf.getChannelData(0);
+      const step = Math.ceil(data.length/W);
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle = 'rgba(0,229,255,0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for(let i=0;i<W;i++){
+        let max=0;
+        for(let j=0;j<step;j++){const val=Math.abs(data[i*step+j]||0);if(val>max)max=val;}
+        const y = (1-max)*H/2;
+        if(i===0)ctx.moveTo(i,y);else ctx.lineTo(i,y);
+      }
+      ctx.stroke();
+      tmpCtx.close();
+    }catch(e){}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// =============================================
+// PROCESSOR UI
+// =============================================
+function updateTempo(el){
+  const v = (el.value/10).toFixed(1);
+  el.style.setProperty('--p', ((el.value-10)/30*100)+'%');
+  document.getElementById('tempoVal').textContent = v+'×';
+  document.getElementById('tempoLabel').textContent = v+'x';
+  document.getElementById('tempoInfo').textContent = v+'x';
+  document.getElementById('playInfo').textContent = (1/parseFloat(v)).toFixed(2)+'x';
+}
+function updatePitch(el){
+  const v = parseInt(el.value);
+  const pct = ((v+12)/24*100);
+  el.style.setProperty('--p', pct+'%');
+  document.getElementById('pitchVal').textContent = (v>=0?'+':'')+v+'st';
+  document.getElementById('pitchLabel').textContent = (v>=0?'+':'')+v+'st';
+}
+function updateTempoUI(){
+  const on = document.getElementById('tempoToggle').checked;
+  document.getElementById('tempoRange').disabled = !on;
+  document.getElementById('pitchRange').disabled = !on;
+  document.querySelectorAll('.proc-block').forEach(b=>b.style.opacity=on?1:0.4);
+}
+
+// Init sliders
+updateTempo(document.getElementById('tempoRange'));
+updatePitch(document.getElementById('pitchRange'));
+updateTempoUI();
+
+// =============================================
+// UPLOAD — SSE Stream Reader
+// =============================================
+async function startUpload(){
+  if(!files.length) return;
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled=true;
+  document.getElementById('uploadProgress').style.display='block';
+  document.getElementById('resultsBox').style.display='none';
+  document.getElementById('resultsBox').innerHTML='';
+
+  const fd = new FormData();
+  files.forEach(entry=>fd.append('files',entry.file));
+  fd.append('processTempo', document.getElementById('tempoToggle').checked);
+  fd.append('tempoMultiplier', (document.getElementById('tempoRange').value/10).toFixed(1));
+  fd.append('pitchShift', document.getElementById('pitchRange').value);
+
+  // Tandai semua file sebagai uploading
+  files.forEach((_,i)=>{
+    const s = document.getElementById('fis-'+i);
+    if(s){s.textContent='⏳';s.className='fi-status uploading';}
+  });
+
+  document.getElementById('upBar').style.width='10%';
+  document.getElementById('upStatus').textContent='Menghubungi server...';
+
+  const resultsMap = {};
+
+  try{
+    const response = await fetch('/api/upload',{method:'POST',body:fd});
+
+    // Cek error awal (sebelum SSE)
+    if(!response.ok){
+      const d = await response.json().catch(()=>({error:'Upload gagal'}));
+      toast(d.error||'Upload gagal','error');
+      files.forEach((_,i)=>{const s=document.getElementById('fis-'+i);if(s){s.textContent='❌';s.className='fi-status failed';}});
+      document.getElementById('upBar').style.width='100%';
+      document.getElementById('upStatus').textContent='Gagal: '+d.error;
+      btn.disabled=false;
+      return;
+    }
+
+    // Baca SSE stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let totalFiles = files.length;
+    let doneData = null;
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += decoder.decode(value,{stream:true});
+
+      const parts = buf.split('\n\n');
+      buf = parts.pop(); // simpan chunk belum lengkap
+
+      for(const part of parts){
+        const line = part.trim();
+        if(!line || line.startsWith(':')) continue; // heartbeat
+        if(!line.startsWith('data: ')) continue;
+        let ev;
+        try { ev = JSON.parse(line.slice(6)); } catch{ continue; }
+
+        if(ev.type === 'progress'){
+          // Update progress bar berdasarkan index
+          const pct = Math.min(90, 10 + ((ev.index / totalFiles) * 80));
+          document.getElementById('upBar').style.width = pct+'%';
+          document.getElementById('upStatus').textContent = ev.message || 'Memproses...';
+
+          // Update status icon file
+          const s = document.getElementById('fis-'+ev.index);
+          if(s){
+            if(ev.status==='success'){
+              s.textContent='✅'; s.className='fi-status success';
+            } else if(ev.status==='failed'){
+              s.textContent='❌'; s.className='fi-status failed';
+            } else {
+              s.textContent='⏳'; s.className='fi-status uploading';
+            }
+          }
+          if(ev.asset_id) resultsMap[ev.index] = {asset_id: ev.asset_id, status:'SUCCESS', file: ev.file};
+          if(ev.status==='failed') resultsMap[ev.index] = {status:'FAILED', error_msg: ev.error_msg, file: ev.file};
+
+        } else if(ev.type === 'done'){
+          doneData = ev;
+        }
+      }
+    }
+
+    // Selesai — tampilkan hasil
+    document.getElementById('upBar').style.width='100%';
+    const finalResults = doneData ? doneData.results : Object.values(resultsMap);
+    const sukses = doneData ? doneData.success : finalResults.filter(r=>r.status==='SUCCESS').length;
+    const total  = doneData ? doneData.total  : finalResults.length;
+
+    document.getElementById('upStatus').textContent=`✅ Selesai: ${sukses}/${total} berhasil`;
+
+    const rb = document.getElementById('resultsBox');
+    rb.style.display='block';
+    rb.innerHTML = finalResults.map(r=>`
+      <div class="result-card ${r.status==='SUCCESS'?'':'fail'}">
+        <span class="rc-icon">${r.status==='SUCCESS'?'✅':'❌'}</span>
+        <div>
+          <div class="rc-name">${r.file||r.filename}</div>
+          ${r.status==='SUCCESS'
+            ? `<div class="rc-asset">Asset ID: ${r.asset_id} <button class="copy-btn" onclick="copyText('${r.asset_id}')">COPY</button></div>`
+            : `<div class="rc-err">${r.error_msg||'Upload gagal'}</div>`
+          }
+        </div>
+      </div>
+    `).join('');
+
+    finalResults.forEach((res,i)=>{
+      let fi = i;
+      if(fi >= files.length || (files[fi].file.name !== res.file && files[fi].file.name !== res.filename)){
+        fi = files.findIndex(e=>e.file.name===res.file||e.file.name===res.filename);
+      }
+      if(fi>=0){
+        const s=document.getElementById('fis-'+fi);
+        if(s){s.textContent=res.status==='SUCCESS'?'✅':'❌';s.className='fi-status '+(res.status==='SUCCESS'?'success':'failed');}
+      }
+    });
+
+    toast(`${sukses}/${total} file berhasil diupload!`, sukses>0?'success':'error');
+    await loadUser(); // refresh quota
+
+  }catch(e){
+    toast('Koneksi error: '+e.message,'error');
+    document.getElementById('upStatus').textContent='Error koneksi';
+    files.forEach((_,i)=>{const s=document.getElementById('fis-'+i);if(s){s.textContent='❌';s.className='fi-status failed';}});
+  }
+
+  btn.disabled = (files.length===0);
+}
+
+
+// =============================================
+// AUDIO EDITOR
+// =============================================
+let edBuf = null, edFile = null;
+let edTrimStart = 0, edTrimEnd = 0;
+let edFadeIn = 0, edFadeOut = 0;
+let edPlaying = false, edSrc = null, edGainNode = null, edACtx = null;
+let edPlayStartWall = 0, edPlayOffset = 0, edRafId = null;
+let edDrag = null; // 'start'|'end'|null
+
+// ── Waveform cache ──────────────────────────────────────
+let edCachedPeaks = null;   // Float32Array peak per pixel
+let edCachedW = 0;          // width peaks were built for
+let edOffscreen = null;     // offscreen canvas with static bars
+let edDrawPending = false;  // RAF throttle flag
+
+// Setup editor drop zone & file input
+document.addEventListener('DOMContentLoaded', ()=>{
+  const dz = document.getElementById('edDropZone');
+  const fi = document.getElementById('edFileInput');
+  if(dz){
+    dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('drag-over')});
+    dz.addEventListener('dragleave', ()=>dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e=>{
+      e.preventDefault();dz.classList.remove('drag-over');
+      const f = Array.from(e.dataTransfer.files).find(f=>f.type==='audio/mpeg'||f.name.endsWith('.mp3'));
+      if(f) edLoadFile(f); else toast('Hanya file MP3','error');
+    });
+  }
+  if(fi) fi.addEventListener('change', ()=>{ if(fi.files[0]) edLoadFile(fi.files[0]); fi.value=''; });
+
+  // Canvas pointer events for drag handles
+  const canvas = document.getElementById('edCanvas');
+  if(canvas){
+    canvas.addEventListener('pointerdown', edHandleDown);
+    canvas.addEventListener('pointermove', edHandleMove);
+    canvas.addEventListener('pointerup', ()=>{ edDrag=null; });
+    canvas.addEventListener('pointercancel', ()=>{ edDrag=null; });
+  }
+
+  window.addEventListener('resize', ()=>{ if(edBuf){ edCachedW=0; edOffscreen=null; edScheduleDraw(); } });
+});
+
+function edLoadFile(file){
+  edFile = file;
+  const reader = new FileReader();
+  reader.onload = async e=>{
+    try{
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      edBuf = await ctx.decodeAudioData(e.target.result.slice(0));
+      await ctx.close();
+      edTrimStart = 0;
+      edTrimEnd = edBuf.duration;
+      edFadeIn = 0; edFadeOut = 0;
+      // Invalidate cache when new file loaded
+      edCachedPeaks = null; edCachedW = 0; edOffscreen = null;
+      document.getElementById('edFiRange').value = 0;
+      document.getElementById('edFoRange').value = 0;
+      edUpdateRangeStyle(document.getElementById('edFiRange'));
+      edUpdateRangeStyle(document.getElementById('edFoRange'));
+      document.getElementById('edFileName').textContent = file.name;
+      document.getElementById('edDuration').textContent = fmtTime(edBuf.duration);
+      document.getElementById('edPlaceholder').style.display = 'none';
+      document.getElementById('edControls').style.display = 'block';
+      document.getElementById('edDropZone').style.display = 'none';
+      edUpdateLabels();
+      setTimeout(edDrawWave, 50);
+    } catch(err){ toast('Gagal decode audio: '+err.message,'error'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function edHandleDown(e){
+  if(!edBuf) return;
+  const rect = document.getElementById('edCanvas').getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const pct = Math.max(0, Math.min(1, x / rect.width));
+  const t = pct * edBuf.duration;
+  const distStart = Math.abs(t - edTrimStart);
+  const distEnd   = Math.abs(t - edTrimEnd);
+  edDrag = distStart <= distEnd ? 'start' : 'end';
+  document.getElementById('edCanvas').setPointerCapture(e.pointerId);
+  e.preventDefault();
+}
+
+function edHandleMove(e){
+  if(!edDrag || !edBuf) return;
+  const rect = document.getElementById('edCanvas').getBoundingClientRect();
+  const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+  const t = (x / rect.width) * edBuf.duration;
+  if(edDrag === 'start'){
+    edTrimStart = Math.max(0, Math.min(t, edTrimEnd - 0.3));
+    edFadeIn = Math.min(edFadeIn, Math.max(0, (edTrimEnd - edTrimStart) * 0.4));
+  } else {
+    edTrimEnd = Math.min(edBuf.duration, Math.max(t, edTrimStart + 0.3));
+    edFadeOut = Math.min(edFadeOut, Math.max(0, (edTrimEnd - edTrimStart) * 0.4));
+  }
+  edUpdateLabels();
+  edScheduleDraw();
+}
+
+function edUpdateFade(input, type){
+  if(!edBuf) return;
+  const maxFade = Math.max(0, (edTrimEnd - edTrimStart) * 0.45);
+  const val = (parseInt(input.value)/100) * maxFade;
+  if(type === 'in'){
+    edFadeIn = val;
+    document.getElementById('edFiDisp').textContent = val.toFixed(1)+'s';
+    document.getElementById('edFiVal').textContent = val.toFixed(1)+'s';
+  } else {
+    edFadeOut = val;
+    document.getElementById('edFoDisp').textContent = val.toFixed(1)+'s';
+    document.getElementById('edFoVal').textContent = val.toFixed(1)+'s';
+  }
+  edUpdateRangeStyle(input);
+  edScheduleDraw();
+}
+
+function edUpdateRangeStyle(input){
+  const p = parseInt(input.value) + '%';
+  input.style.setProperty('--p', p);
+}
+
+function edUpdateLabels(){
+  if(!edBuf) return;
+  document.getElementById('edTrimStartVal').textContent = fmtTimeFull(edTrimStart);
+  document.getElementById('edTrimEndVal').textContent   = fmtTimeFull(edTrimEnd);
+  document.getElementById('edStartLbl').textContent = fmtTime(edTrimStart);
+  document.getElementById('edMidLbl').textContent   = fmtTime((edTrimStart+edTrimEnd)/2);
+  document.getElementById('edEndLbl').textContent   = fmtTime(edTrimEnd);
+  document.getElementById('edDuration').textContent = fmtTime(edBuf.duration);
+}
+
+function fmtTimeFull(s){
+  if(isNaN(s)) return '0:00.0';
+  const m = Math.floor(s/60);
+  const sec = (s%60).toFixed(1);
+  return `${m}:${parseFloat(sec)<10?'0':''}${sec}`;
+}
+
+// ── edScheduleDraw: RAF-throttled draw ──────────────────
+function edScheduleDraw(){
+  if(edDrawPending) return;
+  edDrawPending = true;
+  requestAnimationFrame(()=>{ edDrawPending=false; edDrawWave(); });
+}
+
+// ── edBuildPeaksCache: compute peaks ONCE per file load ──
+function edBuildPeaksCache(W, H){
+  if(!edBuf) return;
+  const data = edBuf.getChannelData(0);
+  const step = Math.ceil(data.length / W);
+  edCachedPeaks = new Float32Array(W);
+  for(let i = 0; i < W; i++){
+    let max = 0;
+    const end = Math.min(data.length, (i+1)*step);
+    for(let j = i*step; j < end; j++){
+      const v = Math.abs(data[j]);
+      if(v > max) max = v;
+    }
+    edCachedPeaks[i] = max;
+  }
+  // Draw static waveform to offscreen canvas (dim, no trim colouring)
+  // We use a regular canvas as fallback for browsers without OffscreenCanvas
+  edOffscreen = document.createElement('canvas');
+  edOffscreen.width = W; edOffscreen.height = H;
+  const octx = edOffscreen.getContext('2d');
+  octx.fillStyle = '#080f1c';
+  octx.fillRect(0, 0, W, H);
+  for(let i = 0; i < W; i++){
+    const barH = Math.max(2, edCachedPeaks[i] * H * 0.82);
+    octx.fillStyle = 'rgba(0,229,255,0.12)';
+    octx.fillRect(i, (H-barH)/2, 1, barH);
+  }
+  edCachedW = W;
+}
+
+function edDrawWave(){
+  const canvas = document.getElementById('edCanvas');
+  if(!canvas || !edBuf) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = Math.round(rect.width * dpr);
+  const H = Math.round(rect.height * dpr);
+  if(!W || !H) return;
+
+  // Resize canvas only when dimensions actually change
+  if(canvas.width !== W || canvas.height !== H){
+    canvas.width = W; canvas.height = H;
+    edCachedW = 0; // invalidate cache so it rebuilds
+  }
+
+  // Rebuild peaks cache if needed (first draw or resize)
+  if(!edCachedPeaks || edCachedW !== W){
+    edBuildPeaksCache(W, H);
+  }
+
+  const ctx = canvas.getContext('2d');
+  const dur = edBuf.duration;
+  const sx = Math.round((edTrimStart / dur) * W);
+  const ex = Math.round((edTrimEnd   / dur) * W);
+
+  // 1. Blit static dim waveform from offscreen
+  ctx.drawImage(edOffscreen, 0, 0);
+
+  // 2. Colour the active trim region (cyan bright) — only repaint those columns
+  for(let i = sx; i <= ex; i++){
+    const barH = Math.max(2, edCachedPeaks[i] * H * 0.82);
+    ctx.fillStyle = 'rgba(0,229,255,0.75)';
+    ctx.fillRect(i, (H-barH)/2, 1, barH);
+  }
+
+  // 3. Fade in overlay
+  if(edFadeIn > 0){
+    const fiW = (edFadeIn / dur) * W;
+    const grad = ctx.createLinearGradient(sx, 0, sx+fiW, 0);
+    grad.addColorStop(0, 'rgba(123,47,255,0.5)');
+    grad.addColorStop(1, 'rgba(123,47,255,0.0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(sx, 0, fiW, H);
+    ctx.fillStyle = 'rgba(200,170,255,0.7)';
+    ctx.font = `${9*dpr}px Inter`;
+    ctx.fillText(`▶ ${edFadeIn.toFixed(1)}s`, sx+4, H-6);
+  }
+
+  // 4. Fade out overlay
+  if(edFadeOut > 0){
+    const foW = (edFadeOut / dur) * W;
+    const grad = ctx.createLinearGradient(ex-foW, 0, ex, 0);
+    grad.addColorStop(0, 'rgba(255,45,107,0.0)');
+    grad.addColorStop(1, 'rgba(255,45,107,0.5)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(ex-foW, 0, foW, H);
+    ctx.fillStyle = 'rgba(255,160,170,0.7)';
+    ctx.font = `${9*dpr}px Inter`;
+    ctx.fillText(`${edFadeOut.toFixed(1)}s ◀`, Math.max(0, ex-foW+4), H-6);
+  }
+
+  // 5. Trim handles
+  ctx.fillStyle = '#00e5ff';
+  ctx.fillRect(sx-2*dpr, 0, 3*dpr, H);
+  ctx.beginPath(); ctx.moveTo(sx-2*dpr,0); ctx.lineTo(sx+10*dpr,0); ctx.lineTo(sx-2*dpr,12*dpr); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = '#00e5ff';
+  ctx.fillRect(ex-1*dpr, 0, 3*dpr, H);
+  ctx.beginPath(); ctx.moveTo(ex+2*dpr,0); ctx.lineTo(ex-10*dpr,0); ctx.lineTo(ex+2*dpr,12*dpr); ctx.closePath(); ctx.fill();
+
+  // 6. Playhead
+  if(edPlaying && edACtx){
+    const elapsed = edACtx.currentTime - edPlayStartWall;
+    const playT = edPlayOffset + elapsed;
+    if(playT >= edTrimStart && playT <= edTrimEnd){
+      const px = Math.round((playT / dur) * W);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillRect(px-dpr, 0, 2*dpr, H);
+    }
+  }
+}
+
+function edTogglePlay(){
+  if(!edBuf) return;
+  if(edPlaying){ edStopPlay(); return; }
+
+  if(edACtx) { try{edACtx.close();}catch{} }
+  edACtx = new (window.AudioContext||window.webkitAudioContext)();
+
+  const src = edACtx.createBufferSource();
+  src.buffer = edBuf;
+
+  const gain = edACtx.createGain();
+  src.connect(gain);
+  gain.connect(edACtx.destination);
+
+  const segDur = edTrimEnd - edTrimStart;
+  const now = edACtx.currentTime;
+
+  gain.gain.setValueAtTime(0.0001, now);
+  if(edFadeIn > 0){
+    gain.gain.linearRampToValueAtTime(1, now + edFadeIn);
+  } else {
+    gain.gain.setValueAtTime(1, now + 0.01);
+  }
+  if(edFadeOut > 0 && segDur > edFadeOut){
+    gain.gain.setValueAtTime(1, now + segDur - edFadeOut);
+    gain.gain.linearRampToValueAtTime(0.0001, now + segDur);
+  }
+
+  src.start(now, edTrimStart, segDur);
+  edSrc = src;
+  edGainNode = gain;
+  edPlaying = true;
+  edPlayStartWall = edACtx.currentTime;
+  edPlayOffset = edTrimStart;
+
+  document.getElementById('edPlayBtn').textContent = '⏸';
+
+  src.onended = ()=>{
+    edPlaying = false;
+    document.getElementById('edPlayBtn').textContent = '▶';
+    cancelAnimationFrame(edRafId);
+    edDrawWave();
+  };
+
+  const loop = ()=>{ edDrawWave(); if(edPlaying) edRafId = requestAnimationFrame(loop); };
+  edRafId = requestAnimationFrame(loop);
+}
+
+function edStopPlay(){
+  if(edSrc){ try{edSrc.stop();}catch{} edSrc=null; }
+  if(edACtx){ try{edACtx.close();}catch{} edACtx=null; }
+  edPlaying = false;
+  document.getElementById('edPlayBtn').textContent = '▶';
+  cancelAnimationFrame(edRafId);
+  edDrawWave();
+}
+
+function edReset(){
+  if(!edBuf) return;
+  edTrimStart = 0; edTrimEnd = edBuf.duration;
+  edFadeIn = 0; edFadeOut = 0;
+  document.getElementById('edFiRange').value = 0;
+  document.getElementById('edFoRange').value = 0;
+  document.getElementById('edFiDisp').textContent = '0.0s';
+  document.getElementById('edFoDisp').textContent = '0.0s';
+  document.getElementById('edFiVal').textContent  = '0.0s';
+  document.getElementById('edFoVal').textContent  = '0.0s';
+  edUpdateRangeStyle(document.getElementById('edFiRange'));
+  edUpdateRangeStyle(document.getElementById('edFoRange'));
+  edUpdateLabels();
+  edScheduleDraw();
+}
+
+async function edApplyAndSend(){
+  if(!edFile || !edBuf) return;
+  const btn = document.getElementById('edApplyBtn');
+  btn.disabled = true;
+  const prog = document.getElementById('edApplyProgress');
+  prog.style.display = 'block';
+  document.getElementById('edApplyStatus').textContent = 'Memproses dengan FFmpeg...';
+
+  const form = new FormData();
+  form.append('file', edFile, edFile.name);
+  form.append('trimStart', edTrimStart.toFixed(3));
+  form.append('trimEnd', edTrimEnd.toFixed(3));
+  form.append('fadeIn', edFadeIn.toFixed(3));
+  form.append('fadeOut', edFadeOut.toFixed(3));
+
+  try{
+    const r = await fetch('/api/editor/process', { method:'POST', body:form });
+    if(!r.ok){ const err=await r.json(); throw new Error(err.error||'Server error'); }
+    const blob = await r.blob();
+    const fname = (r.headers.get('X-Filename') || edFile.name.replace('.mp3','_edited.mp3'));
+    const outFile = new File([blob], fname, {type:'audio/mpeg'});
+    addFiles([outFile]);
+    goPage('upload');
+    toast('✅ Berhasil! File ditambahkan ke queue upload', 'success');
+  } catch(e){
+    toast('Error: '+e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    prog.style.display = 'none';
+  }
+}
+
+async function edFetchUrl(){
+  const urlInput = document.getElementById('edUrlInput');
+  const url = urlInput.value.trim();
+  if(!url){ toast('Masukkan URL terlebih dulu','error'); return; }
+
+  const btn = document.getElementById('edFetchBtn');
+  const prog = document.getElementById('edFetchProgress');
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengunduh...';
+  prog.style.display = 'block';
+
+  // Animate progress bar
+  const bar = document.getElementById('edFetchBar');
+  bar.style.width = '15%';
+  const anim = setInterval(()=>{
+    const w = parseInt(bar.style.width);
+    if(w < 85) bar.style.width = (w + Math.random()*4+1) + '%';
+  }, 800);
+
+  try{
+    const r = await fetch('/api/fetch-audio', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({url})
+    });
+    clearInterval(anim);
+    if(!r.ok){ const err=await r.json(); throw new Error(err.error||'Gagal download'); }
+
+    bar.style.width = '95%';
+    const blob = await r.blob();
+    bar.style.width = '100%';
+
+    const fname = r.headers.get('X-Filename') || 'audio.mp3';
+    const file = new File([blob], fname, {type:'audio/mpeg'});
+    urlInput.value = '';
+    edLoadFile(file);
+    toast('✅ Audio berhasil diunduh!', 'success');
+  } catch(e){
+    clearInterval(anim);
+    toast('❌ '+e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇️ Ambil Audio';
+    setTimeout(()=>{ prog.style.display='none'; bar.style.width='0%'; }, 1500);
+  }
+}
+
+
+async function loadHistory(){
+  const container = document.getElementById('histContent');
+  container.innerHTML = '<div class="empty-state"><span class="ei">⏳</span>Loading...</div>';
+  try{
+    const r = await fetch('/api/history');
+    const data = await r.json();
+    if(!data.length){container.innerHTML='<div class="empty-state"><span class="ei">📭</span>Belum ada upload</div>';return;}
+    container.innerHTML = `
+      <div style="overflow-x:auto">
+      <table class="hist-table">
+        <thead><tr>
+          <th>File</th><th>Asset ID</th><th>Status</th><th>Tanggal</th><th></th>
+        </tr></thead>
+        <tbody>${data.map(h=>`
+          <tr>
+            <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h.filename}</td>
+            <td>${h.asset_id?`<span class="asset-id">${h.asset_id}</span> <button class="copy-btn" onclick="copyText('${h.asset_id}')">COPY</button>`:'—'}</td>
+            <td><span class="status-badge ${h.status==='SUCCESS'?'success':'failed'}">${h.status}</span></td>
+            <td style="font-size:11px;color:rgba(200,223,240,0.35);font-family:Space Mono">${h.created_at?h.created_at.slice(0,16).replace('T',' '):'—'}</td>
+            <td><button onclick="deleteHistory('${h.id}')" style="background:none;border:none;color:rgba(255,45,107,0.4);cursor:pointer;font-size:14px" title="Hapus">✕</button></td>
+          </tr>
+        `).join('')}</tbody>
+      </table>
+      </div>`;
+  }catch(e){container.innerHTML='<div class="empty-state">Error loading history</div>';}
+}
+
+async function deleteHistory(id){
+  await fetch('/api/history/'+id,{method:'DELETE'});
+  loadHistory();
+}
+
+// =============================================
+// SETTINGS
+// =============================================
+async function saveRoblox(){
+  const body = {creator_type: robloxTab};
+  if(robloxTab==='user'){
+    body.roblox_user_id = document.getElementById('rxUserId').value.trim();
+    body.roblox_api_key = document.getElementById('rxApiKey').value.trim();
+  } else {
+    body.roblox_group_id = document.getElementById('rxGroupId').value.trim();
+    body.roblox_user_id = document.getElementById('rxGroupUserId').value.trim();
+    body.roblox_group_api_key = document.getElementById('rxGroupApiKey').value.trim();
+  }
+  const r = await fetch('/api/settings/roblox',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d = await r.json();
+  const msgEl = document.getElementById('robloxMsg');
+  msgEl.textContent = d.message || d.error;
+  msgEl.className = 'msg-inline ' + (d.success?'success':'error');
+  if(d.success){await loadUser();toast('Roblox account berhasil dihubungkan!','success');}
+}
+
+async function redeemInvite(){
+  const code = document.getElementById('inviteInput').value.trim();
+  if(!code){return;}
+  const r = await fetch('/api/invite/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+  const d = await r.json();
+  const msgEl = document.getElementById('inviteMsg');
+  msgEl.textContent = d.message || d.error;
+  msgEl.className = 'msg-inline ' + (d.success?'success':'error');
+  if(d.success){await loadUser();toast('Tier berhasil diupgrade! 🎉','success');}
+}
+
+async function testRoblox(){
+  const statusEl = document.getElementById('robloxStatus');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '⏳ Mengecek...';
+  try {
+    const r = await fetch('/api/debug/roblox');
+    const d = await r.json();
+    statusEl.innerHTML = 
+      '<span style="color:rgba(200,223,240,0.4)">Tipe:</span> ' + d.creator_type + '<br>' +
+      '<span style="color:rgba(200,223,240,0.4)">User ID:</span> ' + (d.roblox_user_id || '❌ Kosong') + '<br>' +
+      '<span style="color:rgba(200,223,240,0.4)">API Key:</span> ' + (d.api_key_preview || '❌ Belum tersimpan') + '<br>' +
+      '<span style="color:rgba(200,223,240,0.4)">Status:</span> ' + (d.has_api_key ? '<span style="color:#00e5a0">✅ Terhubung</span>' : '<span style="color:#ff5c7b">❌ Belum ada API Key</span>');
+  } catch(e) {
+    statusEl.innerHTML = '❌ Error: ' + e.message;
+  }
+}
+
+async function doLogout(){
+  await fetch('/api/auth/logout',{method:'POST'});
+  location.href='/';
+}
+
+// =============================================
+// UTILS
+// =============================================
+function copyText(text){
+  navigator.clipboard.writeText(text).then(()=>toast('Asset ID disalin!','success'));
+}
+
+function toast(msg, type=''){
+  const el = document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast '+type+' show';
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
