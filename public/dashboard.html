@@ -95,13 +95,15 @@
       <div>
         <div class="card">
           <div class="card-title"><span>◈</span> AUDIO PROCESSOR</div>
+
+          <!-- SPEED TOGGLE + SLIDERS -->
           <div class="toggle-row">
-            <span class="tgl-label">🎚️ Ubah Tempo</span>
+            <span class="tgl-label">🎚️ Ubah Speed &amp; Pitch</span>
             <label class="sw"><input type="checkbox" id="tempoToggle" onchange="updateTempoUI()"/><div class="sw-track"></div><div class="sw-knob"></div></label>
           </div>
           <div class="proc-row">
             <div class="proc-block">
-              <div class="pb-label"><span>TEMPO</span><span id="tempoLabel">2.0x</span></div>
+              <div class="pb-label"><span>UPLOAD SPEED</span><span id="tempoLabel">2.0x</span></div>
               <div class="pb-val" id="tempoVal">2.0×</div>
               <input type="range" id="tempoRange" min="10" max="40" value="20" step="1" oninput="updateTempo(this)"/>
               <div class="ticks"><span>1.0×</span><span>2.0×</span><span>3.0×</span><span>4.0×</span></div>
@@ -110,13 +112,48 @@
               <div class="pb-label"><span>PITCH</span><span id="pitchLabel">0st</span></div>
               <div class="pb-val pitch" id="pitchVal">±0st</div>
               <input type="range" class="pitch-range" id="pitchRange" min="-12" max="12" value="0" step="1" oninput="updatePitch(this)"/>
-              <div class="ticks"><span>-12</span><span>0</span><span>+12</span></div>
+              <div class="ticks"><span>-12st</span><span>0st</span><span>+12st</span></div>
             </div>
           </div>
-          <div class="info-box">
-            <strong>Info Processor:</strong><br>
-            Tempo <strong id="tempoInfo">2.0x</strong> → playback speed di Roblox jadi <strong id="playInfo">0.5x</strong> dari normal.<br>
-            Pitch mengubah nada audio tanpa mempengaruhi durasi.
+
+          <!-- PLAYBACK INFO CARD -->
+          <div class="info-box" id="playbackInfoBox">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:18px">🎮</span>
+              <strong style="color:var(--accent)">Panduan PlaybackSpeed Roblox</strong>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="opacity:.7">Audio diupload <span id="tempoInfo" style="color:var(--accent);font-weight:700">2.0×</span> lebih cepat</span>
+                <span id="playbackBadge" style="background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.3);color:#00e5ff;padding:2px 10px;border-radius:20px;font-weight:700;font-size:13px">PlaybackSpeed = 0.50</span>
+              </div>
+              <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px 10px;font-family:monospace;font-size:12px;color:#aef">
+                Sound.PlaybackSpeed = <span id="playbackCodeVal" style="color:#00e5ff;font-weight:700">0.50</span> <span style="color:#666">-- set di script Roblox</span>
+              </div>
+              <div id="pitchInfoLine" style="display:none;opacity:.8">
+                Pitch: <span id="pitchInfoVal" style="color:#c8a0ff;font-weight:700">+0st</span> semitone — nada audio berubah
+              </div>
+              <div style="opacity:.55;font-size:11.5px">
+                💡 Rumus: PlaybackSpeed = 1 ÷ Upload Speed
+              </div>
+            </div>
+          </div>
+
+          <!-- DESCRIPTION FIELD -->
+          <div style="margin-top:14px">
+            <div class="pb-label" style="margin-bottom:6px">
+              <span>📝 DESKRIPSI ASSET</span>
+              <span style="opacity:.5;font-size:11px">opsional</span>
+            </div>
+            <textarea id="assetDescription"
+              placeholder="Contoh: BGM lobby club, looping ambient, BPM 128..."
+              style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--text);font-size:13px;padding:10px 12px;resize:vertical;min-height:70px;font-family:inherit;outline:none;transition:border .2s"
+              onfocus="this.style.borderColor='rgba(0,229,255,0.4)'"
+              onblur="this.style.borderColor='rgba(255,255,255,0.1)'"
+              maxlength="1000"
+              oninput="updateDescCount(this)"></textarea>
+            <div style="text-align:right;font-size:11px;opacity:.4;margin-top:2px"><span id="descCount">0</span>/1000</div>
+            <div class="form-hint" style="margin-top:4px">Deskripsi ini akan tampil di halaman asset Roblox kamu</div>
           </div>
 
         </div>
@@ -289,8 +326,9 @@
           </div>
           <div class="form-group">
             <label>Group API Key</label>
-            <input type="password" id="rxGroupApiKey" placeholder="Paste Group API Key"/>
-            <div class="form-hint">Kosongkan jika tidak ingin mengubah key tersimpan</div>
+            <input type="password" id="rxGroupApiKey" placeholder="Paste Group API Key baru (kosongkan jika tidak ingin ubah)"/>
+            <div class="form-hint" id="groupApiKeyHint" style="display:none;color:#00e5a0">✅ API Key sudah tersimpan — kosongkan jika tidak ingin mengubah</div>
+            <div class="form-hint" id="groupApiKeyHintEmpty">Wajib diisi untuk pertama kali setup group</div>
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -422,7 +460,9 @@ function updateSidebar(){
   document.getElementById('quotaLeft').textContent = `Sisa: ${user.remaining}`;
 
   // No API warn
-  document.getElementById('noApiWarn').style.display = user.has_api_key ? 'none' : 'flex';
+  // FIX: cek api key sesuai creator_type aktif
+  const hasActiveKey = user.creator_type === 'group' ? user.has_group_api_key : user.has_api_key;
+  document.getElementById('noApiWarn').style.display = hasActiveKey ? 'none' : 'flex';
 
   // Settings page
   document.getElementById('accUsername').textContent = user.username;
@@ -443,6 +483,13 @@ function updateSidebar(){
   if(user.roblox_user_id) document.getElementById('rxUserId').value = user.roblox_user_id;
   if(user.roblox_group_id) document.getElementById('rxGroupId').value = user.roblox_group_id;
   if(user.roblox_user_id) document.getElementById('rxGroupUserId').value = user.roblox_user_id;
+  // Tampilkan hint status API Key group
+  const hintSaved = document.getElementById('groupApiKeyHint');
+  const hintEmpty = document.getElementById('groupApiKeyHintEmpty');
+  if(hintSaved && hintEmpty){
+    hintSaved.style.display = user.has_group_api_key ? 'block' : 'none';
+    hintEmpty.style.display = user.has_group_api_key ? 'none' : 'block';
+  }
   if(user.creator_type==='group') switchRobloxTab('group');
 }
 
@@ -500,7 +547,14 @@ function renderFiles(){
   list.innerHTML = files.map((entry,i)=>`
     <div class="file-item" id="fi-${i}">
       <span class="fi-icon">🎵</span>
-      <span class="fi-name" style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${entry.file.name}</span>
+      <div style="flex:1;min-width:0">
+        <div class="fi-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;opacity:.8">${entry.file.name}</div>
+        <input type="text" class="fi-title-input" placeholder="Custom title (opsional)" value="${entry.title||''}"
+          onchange="files[${i}].title=this.value"
+          style="width:100%;margin-top:3px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text);font-size:11px;padding:3px 7px;outline:none"
+          onfocus="this.style.borderColor='rgba(0,229,255,0.35)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"
+        />
+      </div>
       <span class="fi-size">${(entry.file.size/1024).toFixed(0)}KB</span>
       <button class="fi-play" onclick="setPreview(files[${i}].file)" title="Preview">▶</button>
       <span class="fi-status pending" id="fis-${i}">—</span>
@@ -607,11 +661,15 @@ function drawWave(file){
 // =============================================
 function updateTempo(el){
   const v = (el.value/10).toFixed(1);
+  const playSpeed = (1/parseFloat(v)).toFixed(2);
   el.style.setProperty('--p', ((el.value-10)/30*100)+'%');
   document.getElementById('tempoVal').textContent = v+'×';
   document.getElementById('tempoLabel').textContent = v+'x';
-  document.getElementById('tempoInfo').textContent = v+'x';
-  document.getElementById('playInfo').textContent = (1/parseFloat(v)).toFixed(2)+'x';
+  document.getElementById('tempoInfo').textContent = v+'×';
+  const badge = document.getElementById('playbackBadge');
+  const codeVal = document.getElementById('playbackCodeVal');
+  if(badge) badge.textContent = 'PlaybackSpeed = '+playSpeed;
+  if(codeVal) codeVal.textContent = playSpeed;
 }
 function updatePitch(el){
   const v = parseInt(el.value);
@@ -619,6 +677,14 @@ function updatePitch(el){
   el.style.setProperty('--p', pct+'%');
   document.getElementById('pitchVal').textContent = (v>=0?'+':'')+v+'st';
   document.getElementById('pitchLabel').textContent = (v>=0?'+':'')+v+'st';
+  const pitchLine = document.getElementById('pitchInfoLine');
+  const pitchVal2 = document.getElementById('pitchInfoVal');
+  if(pitchLine) pitchLine.style.display = (v!==0)?'block':'none';
+  if(pitchVal2) pitchVal2.textContent = (v>=0?'+':'')+v+'st';
+}
+function updateDescCount(el){
+  const c = document.getElementById('descCount');
+  if(c) c.textContent = el.value.length;
 }
 function updateTempoUI(){
   const on = document.getElementById('tempoToggle').checked;
@@ -645,9 +711,12 @@ async function startUpload(){
 
   const fd = new FormData();
   files.forEach(entry=>fd.append('files',entry.file));
+  files.forEach(entry=>fd.append('titles[]', entry.title || ''));
   fd.append('processTempo', document.getElementById('tempoToggle').checked);
   fd.append('tempoMultiplier', (document.getElementById('tempoRange').value/10).toFixed(1));
   fd.append('pitchShift', document.getElementById('pitchRange').value);
+  const descEl = document.getElementById('assetDescription');
+  fd.append('assetDescription', descEl ? descEl.value.trim() : '');
 
   // Tandai semua file sebagai uploading
   files.forEach((_,i)=>{
@@ -1252,11 +1321,16 @@ async function testRoblox(){
   try {
     const r = await fetch('/api/debug/roblox');
     const d = await r.json();
-    statusEl.innerHTML = 
-      '<span style="color:rgba(200,223,240,0.4)">Tipe:</span> ' + d.creator_type + '<br>' +
+    const isGroup = d.creator_type === 'group';
+    const activeKey = isGroup ? d.has_group_api_key : d.has_api_key;
+    statusEl.innerHTML =
+      '<span style="color:rgba(200,223,240,0.4)">Tipe:</span> ' + (isGroup ? '👥 Group' : '👤 Personal') + '<br>' +
       '<span style="color:rgba(200,223,240,0.4)">User ID:</span> ' + (d.roblox_user_id || '❌ Kosong') + '<br>' +
-      '<span style="color:rgba(200,223,240,0.4)">API Key:</span> ' + (d.api_key_preview || '❌ Belum tersimpan') + '<br>' +
-      '<span style="color:rgba(200,223,240,0.4)">Status:</span> ' + (d.has_api_key ? '<span style="color:#00e5a0">✅ Terhubung</span>' : '<span style="color:#ff5c7b">❌ Belum ada API Key</span>');
+      (isGroup ? '<span style="color:rgba(200,223,240,0.4)">Group ID:</span> ' + (d.roblox_group_id || '❌ Kosong') + '<br>' : '') +
+      '<span style="color:rgba(200,223,240,0.4)">' + (isGroup ? 'Group API Key:' : 'API Key:') + '</span> ' +
+        (activeKey ? '<span style="color:#00e5a0">✅ Tersimpan</span>' : '❌ Belum tersimpan') + '<br>' +
+      '<span style="color:rgba(200,223,240,0.4)">Status:</span> ' +
+        (activeKey ? '<span style="color:#00e5a0">✅ Siap upload</span>' : '<span style="color:#ff5c7b">❌ Belum ada API Key</span>');
   } catch(e) {
     statusEl.innerHTML = '❌ Error: ' + e.message;
   }

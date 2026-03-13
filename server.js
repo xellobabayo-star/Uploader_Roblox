@@ -26,7 +26,12 @@ try {
 const app = express();
 const PORT = process.env.PORT || 1179;
 
-const dataDir = path.join(__dirname, "data");
+// Vercel /tmp support — di Vercel filesystem read-only kecuali /tmp
+// Di Railway/VPS tetap pakai ./data seperti biasa
+const isVercel = process.env.VERCEL === "1";
+const dataDir = isVercel
+  ? path.join(os.tmpdir(), "xello-data")
+  : path.join(__dirname, "data");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const db = new Database(path.join(dataDir, "xello.sqlite"));
@@ -59,6 +64,10 @@ db.exec(`
     is_active INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
   );
+  CREATE TABLE IF NOT EXISTS admin_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
   CREATE TABLE IF NOT EXISTS upload_history (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -74,6 +83,15 @@ db.exec(`
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
 `);
+
+// ── Admin Settings helpers (persistent ke DB) ──────────────────────────
+function adminSettingGet(key) {
+  const row = db.prepare("SELECT value FROM admin_settings WHERE key=?").get(key);
+  return row ? row.value : null;
+}
+function adminSettingSet(key, value) {
+  db.prepare("INSERT INTO admin_settings (key, value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(key, value ?? "");
+}
 
 const TIERS = {
   trial:    { label: "Trial",    limit: parseInt(process.env.TIER_TRIAL_LIMIT)    || 3,      color: "#ff9800" },
@@ -104,7 +122,9 @@ function userSafeData(user) {
     tier: user.tier, tier_label: tier.label, tier_color: tier.color, tier_limit: tier.limit,
     uploads_this_month: user.uploads_this_month, total_uploads: user.total_uploads, remaining,
     roblox_user_id: user.roblox_user_id, roblox_group_id: user.roblox_group_id,
-    creator_type: user.creator_type, has_api_key: !!(user.roblox_api_key || user.roblox_group_api_key),
+    creator_type: user.creator_type,
+    has_api_key: !!(user.roblox_api_key),
+    has_group_api_key: !!(user.roblox_group_api_key),
     is_active: user.is_active, created_at: user.created_at
   };
 }
@@ -113,10 +133,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => { res.setHeader("bypass-tunnel-reminder", "true"); next(); });
+// Trust proxy Railway/Vercel untuk secure cookies
+if (process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT) {
+  app.set("trust proxy", 1);
+}
 app.use(session({
   secret: process.env.SESSION_SECRET || "xello_fallback_secret",
   resave: false, saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    secure: !!(process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT),
+    sameSite: "lax"
+  }
 }));
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -202,17 +230,35 @@ app.post("/api/settings/roblox", requireAuth, (req, res) => {
   if (!["user", "group"].includes(creator_type)) return res.status(400).json({ error: "creator_type tidak valid" });
   if (creator_type === "user") {
     if (!roblox_user_id) return res.status(400).json({ error: "Roblox User ID wajib diisi" });
+    const existingPersonalUser = db.prepare("SELECT roblox_api_key FROM users WHERE id=?").get(req.session.userId);
     if (roblox_api_key && roblox_api_key.trim()) {
+      // User masukkan key baru
       db.prepare("UPDATE users SET creator_type='user', roblox_user_id=?, roblox_api_key=?, roblox_group_id=NULL, roblox_group_api_key=NULL WHERE id=?")
         .run(roblox_user_id, roblox_api_key.trim(), req.session.userId);
-    } else {
+    } else if (existingPersonalUser && existingPersonalUser.roblox_api_key) {
+      // Key tidak diisi ulang — keep key lama
       db.prepare("UPDATE users SET creator_type='user', roblox_user_id=?, roblox_group_id=NULL, roblox_group_api_key=NULL WHERE id=?")
         .run(roblox_user_id, req.session.userId);
+    } else {
+      // Belum pernah ada key — wajib isi
+      return res.status(400).json({ error: "API Key wajib diisi untuk pertama kali setup" });
     }
   } else {
     if (!roblox_group_id || !roblox_user_id) return res.status(400).json({ error: "Group ID dan User ID wajib diisi" });
-    db.prepare("UPDATE users SET creator_type='group', roblox_user_id=?, roblox_group_id=?, roblox_group_api_key=?, roblox_api_key=NULL WHERE id=?")
-      .run(roblox_user_id, roblox_group_id, roblox_group_api_key || null, req.session.userId);
+    // BUGFIX: Jangan wipe API Key lama kalau user tidak isi ulang
+    const existingGroupUser = db.prepare("SELECT roblox_group_api_key FROM users WHERE id=?").get(req.session.userId);
+    if (roblox_group_api_key && roblox_group_api_key.trim()) {
+      // User masukkan key baru — update semuanya termasuk key
+      db.prepare("UPDATE users SET creator_type='group', roblox_user_id=?, roblox_group_id=?, roblox_group_api_key=?, roblox_api_key=NULL WHERE id=?")
+        .run(roblox_user_id, roblox_group_id, roblox_group_api_key.trim(), req.session.userId);
+    } else if (existingGroupUser && existingGroupUser.roblox_group_api_key) {
+      // Key tidak diisi ulang — keep key lama, hanya update Group ID & User ID
+      db.prepare("UPDATE users SET creator_type='group', roblox_user_id=?, roblox_group_id=?, roblox_api_key=NULL WHERE id=?")
+        .run(roblox_user_id, roblox_group_id, req.session.userId);
+    } else {
+      // Belum ada key tersimpan sama sekali
+      return res.status(400).json({ error: "Group API Key wajib diisi untuk pertama kali setup" });
+    }
   }
   res.json({ success: true, message: "Roblox account berhasil dihubungkan!" });
 });
@@ -289,32 +335,33 @@ app.get("/api/admin/history", requireAdmin, (req, res) => {
 // Admin Roblox settings (simpan di env runtime / memory session)
 app.get("/api/admin/roblox-settings", requireAdmin, (req, res) => {
   res.json({
-    creator_type: req.session.adminCreatorType || process.env.ADMIN_CREATOR_TYPE || "user",
-    roblox_user_id: req.session.adminUserId || process.env.ADMIN_ROBLOX_USER_ID || "",
-    roblox_group_id: req.session.adminGroupId || process.env.ADMIN_ROBLOX_GROUP_ID || "",
-    has_api_key: !!(req.session.adminApiKey || process.env.ADMIN_ROBLOX_API_KEY)
+    creator_type: adminSettingGet("creator_type") || process.env.ADMIN_CREATOR_TYPE || "user",
+    roblox_user_id: adminSettingGet("roblox_user_id") || process.env.ADMIN_ROBLOX_USER_ID || "",
+    roblox_group_id: adminSettingGet("roblox_group_id") || process.env.ADMIN_ROBLOX_GROUP_ID || "",
+    has_api_key: !!(adminSettingGet("roblox_api_key") || process.env.ADMIN_ROBLOX_API_KEY),
+    has_group_api_key: !!(adminSettingGet("roblox_group_api_key") || process.env.ADMIN_ROBLOX_GROUP_API_KEY)
   });
 });
 
 app.post("/api/admin/roblox-settings", requireAdmin, (req, res) => {
   const { creator_type, roblox_user_id, roblox_api_key, roblox_group_id, roblox_group_api_key } = req.body;
-  req.session.adminCreatorType = creator_type || "user";
-  req.session.adminUserId = roblox_user_id || "";
-  req.session.adminGroupId = roblox_group_id || "";
-  if (roblox_api_key && roblox_api_key.trim()) req.session.adminApiKey = roblox_api_key.trim();
-  if (roblox_group_api_key && roblox_group_api_key.trim()) req.session.adminGroupApiKey = roblox_group_api_key.trim();
-  res.json({ success: true, message: "Roblox settings admin tersimpan!" });
+  adminSettingSet("creator_type", creator_type || "user");
+  adminSettingSet("roblox_user_id", roblox_user_id || "");
+  adminSettingSet("roblox_group_id", roblox_group_id || "");
+  if (roblox_api_key && roblox_api_key.trim()) adminSettingSet("roblox_api_key", roblox_api_key.trim());
+  if (roblox_group_api_key && roblox_group_api_key.trim()) adminSettingSet("roblox_group_api_key", roblox_group_api_key.trim());
+  res.json({ success: true, message: "Roblox settings admin tersimpan permanen!" });
 });
 
 // Admin upload route
 const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 app.post("/api/admin/upload", requireAdmin, adminUpload.array("files"), async (req, res) => {
-  const creatorType = req.session.adminCreatorType || process.env.ADMIN_CREATOR_TYPE || "user";
+  const creatorType = adminSettingGet("creator_type") || process.env.ADMIN_CREATOR_TYPE || "user";
   const apiKey = creatorType === "group"
-    ? (req.session.adminGroupApiKey || process.env.ADMIN_ROBLOX_GROUP_API_KEY)
-    : (req.session.adminApiKey || process.env.ADMIN_ROBLOX_API_KEY);
-  const userId = req.session.adminUserId || process.env.ADMIN_ROBLOX_USER_ID;
-  const groupId = req.session.adminGroupId || process.env.ADMIN_ROBLOX_GROUP_ID;
+    ? (adminSettingGet("roblox_group_api_key") || process.env.ADMIN_ROBLOX_GROUP_API_KEY)
+    : (adminSettingGet("roblox_api_key") || process.env.ADMIN_ROBLOX_API_KEY);
+  const userId = adminSettingGet("roblox_user_id") || process.env.ADMIN_ROBLOX_USER_ID;
+  const groupId = adminSettingGet("roblox_group_id") || process.env.ADMIN_ROBLOX_GROUP_ID;
 
   if (!apiKey) return res.status(400).json({ error: "Belum ada API Key Roblox admin. Atur di Settings Upload." });
   if (!req.files?.length) return res.status(400).json({ error: "Tidak ada file." });
@@ -330,6 +377,7 @@ app.post("/api/admin/upload", requireAdmin, adminUpload.array("files"), async (r
   const processTempo = req.body.processTempo === "true";
   const tempoMultiplier = parseFloat(req.body.tempoMultiplier) || 2.0;
   const pitchShift = parseFloat(req.body.pitchShift) || 0;
+  const assetDescription = (req.body.assetDescription || "").trim().slice(0, 1000) || "Uploaded via XELLO Studio (Admin)";
   const results = [];
 
   for (let idx = 0; idx < req.files.length; idx++) {
@@ -355,7 +403,7 @@ app.post("/api/admin/upload", requireAdmin, adminUpload.array("files"), async (r
           : { userId: parseInt(userId) };
         const metadata = {
           assetType: "Audio", displayName,
-          description: "Uploaded via XELLO Studio (Admin)",
+          description: assetDescription,
           creationContext: { creator: creatorField }
         };
         const form = new FormData();
@@ -703,6 +751,7 @@ app.post("/api/upload", requireAuth, upload.array("files"), async (req, res) => 
   const processTempo = req.body.processTempo === "true";
   const tempoMultiplier = parseFloat(req.body.tempoMultiplier) || 1.0;
   const pitchShift = parseFloat(req.body.pitchShift) || 0;
+  const assetDescription = (req.body.assetDescription || "").trim().slice(0, 1000) || "Uploaded via XELLO Studio";
 
   const results = [];
   let successCount = 0;
@@ -751,7 +800,7 @@ app.post("/api/upload", requireAuth, upload.array("files"), async (req, res) => 
 
         const metadata = {
           assetType: "Audio", displayName,
-          description: "Uploaded via XELLO Studio",
+          description: assetDescription,
           creationContext: { creator: creatorField }
         };
         const form = new FormData();
