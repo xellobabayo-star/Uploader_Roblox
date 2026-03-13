@@ -354,7 +354,7 @@ app.post("/api/admin/roblox-settings", requireAdmin, (req, res) => {
 });
 
 // Admin upload route
-const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 150 * 1024 * 1024 } }); // 150MB
 app.post("/api/admin/upload", requireAdmin, adminUpload.array("files"), async (req, res) => {
   const creatorType = adminSettingGet("creator_type") || process.env.ADMIN_CREATOR_TYPE || "user";
   const apiKey = creatorType === "group"
@@ -375,8 +375,8 @@ app.post("/api/admin/upload", requireAdmin, adminUpload.array("files"), async (r
   }
 
   const processTempo = req.body.processTempo === "true";
-  const tempoMultiplier = parseFloat(req.body.tempoMultiplier) || 2.0;
-  const pitchShift = parseFloat(req.body.pitchShift) || 0;
+  const tempoMultiplier = Math.min(16.0, Math.max(0.5, parseFloat(req.body.tempoMultiplier) || 2.0));
+  const pitchShift = Math.min(24, Math.max(-24, parseFloat(req.body.pitchShift) || 0));
   const assetDescription = (req.body.assetDescription || "").trim().slice(0, 1000) || "Uploaded via XELLO Studio (Admin)";
   const results = [];
 
@@ -509,7 +509,7 @@ function processAudio(inputBuffer, filename, tempo = 1.0, pitch = 0) {
 
     log(`FFmpeg args: ${args.join(" ")}`);
 
-    execFile(FFMPEG_PATH, args, { timeout: 120000 }, (err, stdout, stderr) => {
+    execFile(FFMPEG_PATH, args, { timeout: 900000 }, (err, stdout, stderr) => {
       try { fs.unlinkSync(inputPath); } catch {}
       if (err) {
         log(`FFmpeg error: ${err.message}`, "error");
@@ -568,7 +568,7 @@ function processAudioEditor(inputBuffer, filename, trimStart=0, trimEnd=0, fadeI
 
     log(`Editor FFmpeg args: ${args.join(" ")}`);
 
-    execFile(FFMPEG_PATH, args, { timeout: 120000 }, (err, stdout, stderr) => {
+    execFile(FFMPEG_PATH, args, { timeout: 900000 }, (err, stdout, stderr) => {
       try { fs.unlinkSync(inputPath); } catch {}
       if (err) {
         log(`Editor FFmpeg error: ${stderr}`, "error");
@@ -587,7 +587,7 @@ function processAudioEditor(inputBuffer, filename, trimStart=0, trimEnd=0, fadeI
 // ============================================================
 // EDITOR ROUTES
 // ============================================================
-const uploadEditor = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const uploadEditor = multer({ storage: multer.memoryStorage(), limits: { fileSize: 150 * 1024 * 1024 } }); // 150MB
 
 app.post("/api/editor/process", requireAuth, uploadEditor.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file" });
@@ -650,7 +650,7 @@ app.post("/api/fetch-audio", requireAuth, async (req, res) => {
       if (!files[0].endsWith(".mp3")) {
         const mp3Out = path.join(tmpDir, `xdl_${uid}_conv.mp3`);
         await new Promise((resolve, reject) => {
-          execFile(FFMPEG_PATH, ["-i", fullPath, "-b:a", "192k", "-y", mp3Out], { timeout: 120000 }, (err) => {
+          execFile(FFMPEG_PATH, ["-i", fullPath, "-b:a", "192k", "-y", mp3Out], { timeout: 900000 }, (err) => {
             try { fs.unlinkSync(fullPath); } catch {}
             if (err) reject(err); else resolve();
           });
@@ -703,7 +703,7 @@ async function pollOperation(operationId, apiKey, maxAttempts = 20) {
 // ============================================================
 // UPLOAD ROUTE — SSE Streaming (anti-timeout Railway)
 // ============================================================
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 150 * 1024 * 1024 } }); // 150MB untuk support audio panjang
 
 app.post("/api/upload", requireAuth, upload.array("files"), async (req, res) => {
   const user = checkResetMonthly(req.session.userId);
@@ -749,8 +749,8 @@ app.post("/api/upload", requireAuth, upload.array("files"), async (req, res) => 
   }
   const titlesToUse = allTitles.slice(0, filesToProcess.length);
   const processTempo = req.body.processTempo === "true";
-  const tempoMultiplier = parseFloat(req.body.tempoMultiplier) || 1.0;
-  const pitchShift = parseFloat(req.body.pitchShift) || 0;
+  const tempoMultiplier = Math.min(16.0, Math.max(0.5, parseFloat(req.body.tempoMultiplier) || 1.0));
+  const pitchShift = Math.min(24, Math.max(-24, parseFloat(req.body.pitchShift) || 0));
   const assetDescription = (req.body.assetDescription || "").trim().slice(0, 1000) || "Uploaded via XELLO Studio";
 
   const results = [];

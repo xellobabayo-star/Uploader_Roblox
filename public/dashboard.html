@@ -105,14 +105,14 @@
             <div class="proc-block">
               <div class="pb-label"><span>UPLOAD SPEED</span><span id="tempoLabel">2.0x</span></div>
               <div class="pb-val" id="tempoVal">2.0×</div>
-              <input type="range" id="tempoRange" min="10" max="40" value="20" step="1" oninput="updateTempo(this)"/>
-              <div class="ticks"><span>1.0×</span><span>2.0×</span><span>3.0×</span><span>4.0×</span></div>
+              <input type="range" id="tempoRange" min="10" max="160" value="20" step="5" oninput="updateTempo(this)"/>
+              <div class="ticks"><span>1×</span><span>4×</span><span>8×</span><span>12×</span><span>16×</span></div>
             </div>
             <div class="proc-block">
               <div class="pb-label"><span>PITCH</span><span id="pitchLabel">0st</span></div>
               <div class="pb-val pitch" id="pitchVal">±0st</div>
-              <input type="range" class="pitch-range" id="pitchRange" min="-12" max="12" value="0" step="1" oninput="updatePitch(this)"/>
-              <div class="ticks"><span>-12st</span><span>0st</span><span>+12st</span></div>
+              <input type="range" class="pitch-range" id="pitchRange" min="-24" max="24" value="0" step="1" oninput="updatePitch(this)"/>
+              <div class="ticks"><span>-24st</span><span>-12st</span><span>0st</span><span>+12st</span><span>+24st</span></div>
             </div>
           </div>
 
@@ -135,6 +135,9 @@
               </div>
               <div style="opacity:.55;font-size:11.5px">
                 💡 Rumus: PlaybackSpeed = 1 ÷ Upload Speed
+              </div>
+              <div id="durationEstimate" style="margin-top:6px;font-size:12px;background:rgba(0,0,0,0.25);border-radius:7px;padding:6px 10px;display:none">
+                ⏱️ Estimasi: audio <span id="estOriginal">–</span> akan jadi <span id="estResult" style="color:#00e5ff;font-weight:700">–</span> setelah diupload
               </div>
             </div>
           </div>
@@ -661,8 +664,8 @@ function drawWave(file){
 // =============================================
 function updateTempo(el){
   const v = (el.value/10).toFixed(1);
-  const playSpeed = (1/parseFloat(v)).toFixed(2);
-  el.style.setProperty('--p', ((el.value-10)/30*100)+'%');
+  const playSpeed = (1/parseFloat(v)).toFixed(4);
+  el.style.setProperty('--p', ((el.value-10)/150*100)+'%'); // range 10-160 = span 150
   document.getElementById('tempoVal').textContent = v+'×';
   document.getElementById('tempoLabel').textContent = v+'x';
   document.getElementById('tempoInfo').textContent = v+'×';
@@ -670,10 +673,26 @@ function updateTempo(el){
   const codeVal = document.getElementById('playbackCodeVal');
   if(badge) badge.textContent = 'PlaybackSpeed = '+playSpeed;
   if(codeVal) codeVal.textContent = playSpeed;
+  // Estimasi durasi
+  const estBox = document.getElementById('durationEstimate');
+  if(estBox && currentPreviewFile){
+    const audio = new Audio(URL.createObjectURL(currentPreviewFile));
+    audio.onloadedmetadata = () => {
+      const origSec = audio.duration;
+      const resultSec = origSec / parseFloat(v);
+      document.getElementById('estOriginal').textContent = fmtDur(origSec);
+      document.getElementById('estResult').textContent = fmtDur(resultSec);
+      estBox.style.display = 'block';
+    };
+  }
+}
+function fmtDur(sec){
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.floor(sec%60);
+  return h>0 ? h+'j '+m+'m '+s+'d' : m+'m '+s+'d';
 }
 function updatePitch(el){
   const v = parseInt(el.value);
-  const pct = ((v+12)/24*100);
+  const pct = ((v+24)/48*100); // range -24 to +24 = span 48
   el.style.setProperty('--p', pct+'%');
   document.getElementById('pitchVal').textContent = (v>=0?'+':'')+v+'st';
   document.getElementById('pitchLabel').textContent = (v>=0?'+':'')+v+'st';
